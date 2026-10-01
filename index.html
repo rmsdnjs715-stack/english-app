@@ -26,6 +26,8 @@
     .row > * { flex:1; }
     .seg button { text-align:center; } .seg button.on { background:var(--accent); color:#052e16; font-weight:700; }
     .muted { color:var(--muted); font-size:14px; }
+    #scenarios { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    #scenarios .card { margin:0; font-size:15px; padding:14px 12px; }
     #log { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-bottom:12px; }
     .msg { padding:10px 14px; border-radius:14px; max-width:85%; white-space:pre-wrap; }
     .msg.ai { background:var(--card); align-self:flex-start; }
@@ -51,6 +53,11 @@
     <div class="row seg" id="levels">
       <button data-level="beginner">초급</button>
       <button data-level="intermediate">중급</button>
+    </div>
+    <div class="muted" style="margin-top:12px">직접 상황 입력</div>
+    <div class="row">
+      <input id="custom" type="text" maxlength="100" placeholder="예: 미용실에서 머리 자르기" autocomplete="off">
+      <button class="primary small" id="customGo" style="flex:none">시작</button>
     </div>
     <div class="muted" style="margin-top:12px">상황을 고르세요</div>
     <div id="scenarios"></div>

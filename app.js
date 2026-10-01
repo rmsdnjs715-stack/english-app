@@ -1,4 +1,4 @@
-import { SCENARIOS, buildSystemPrompt, buildFeedbackPrompt } from "./scenarios.js";
+import { SCENARIOS, buildSystemPrompt, buildFeedbackPrompt, makeCustomScenario, OPENER_REQUEST } from "./scenarios.js";
 import { transcribe, chat } from "./groq.js";
 
 const $ = (id) => document.getElementById(id);
@@ -31,6 +31,11 @@ $("saveKey").onclick = () => {
   if (!v.startsWith("gsk_")) return alert("gsk_ 로 시작하는 Groq 키를 넣어주세요.");
   store.set("groqKey", v);
   renderHome();
+};
+$("customGo").onclick = () => {
+  const s = makeCustomScenario($("custom").value);
+  if (!s) return alert("어떤 상황인지 한 줄로 적어주세요.");
+  startChat(s);
 };
 $("levels").onclick = (e) => {
   const l = e.target.dataset?.level;
@@ -78,22 +83,29 @@ async function startChat(scenario) {
   } catch {
     // mic denied: text-only mode still works
   }
-  session = {
-    scenario,
-    stream,
-    busy: false,
-    messages: [
-      { role: "system", content: buildSystemPrompt(scenario, level) },
-      { role: "assistant", content: scenario.opener },
-    ],
-  };
+  const system = { role: "system", content: buildSystemPrompt(scenario, level) };
+  session = { scenario, stream, busy: true, messages: [system] };
   $("home").classList.add("hidden");
   $("chat").classList.remove("hidden");
   $("log").replaceChildren();
   $("talk").classList.toggle("hidden", !stream);
+
+  let opener = scenario.opener;
+  if (!opener) {
+    status("상황 준비 중…");
+    try {
+      opener = await chat(key(), [system, { role: "user", content: OPENER_REQUEST }], { maxTokens: 512 });
+    } catch (e) {
+      console.error(e);
+      status(`상황을 못 만들었어요(${e.status ?? "네트워크"}). 나가서 다시 시도하세요.`, true);
+      return;
+    }
+  }
+  if (!session) return; // user left while the opener was loading
+  session = { ...session, busy: false, messages: [system, { role: "assistant", content: opener }] };
   status(stream ? "" : "마이크 권한이 없어 입력창만 쓸 수 있어요.");
-  addMsg("ai", scenario.opener);
-  speak(scenario.opener);
+  addMsg("ai", opener);
+  speak(opener);
 }
 
 function leaveChat() {
