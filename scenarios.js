@@ -158,10 +158,11 @@ export function buildSystemPrompt(scenario, level) {
 export function buildFeedbackPrompt(level) {
   return [
     `You are an English teacher for a Korean ${level} learner. Review the conversation above, only the user's lines.`,
-    "Answer in Korean with this exact structure:",
-    "1) 잘한 점 (1줄)",
-    "2) 고치면 좋은 문장 최대 3개: '내 문장' → '더 자연스러운 문장' + 짧은 이유",
-    "3) 오늘 써먹을 표현 5개: 영어 — 한국어 뜻",
-    "Be concise and encouraging. No markdown symbols like ** or #.",
+    "Reply with ONLY a JSON object, no other text:",
+    '{"praise": "잘한 점 한 줄 (Korean)",',
+    ' "corrections": [{"mine": "the user\'s original sentence", "better": "a more natural English sentence", "why": "짧은 이유 (Korean)"}],',
+    ' "expressions": [{"en": "useful English expression for this scene", "ko": "한국어 뜻"}]}',
+    "corrections: at most 3, only real mistakes or unnatural sentences (empty array if none).",
+    "expressions: exactly 5, short and reusable, matched to the learner's level.",
   ].join("\n");
 }

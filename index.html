@@ -49,6 +49,7 @@
       <input id="key" type="password" placeholder="gsk_..." autocomplete="off">
       <div class="row"><button class="primary small" id="saveKey">저장</button></div>
     </div>
+    <button class="primary" id="reviewBtn" style="margin-bottom:12px">📚 복습하기</button>
     <div class="muted">레벨</div>
     <div class="row seg" id="levels">
       <button data-level="beginner">초급</button>
@@ -61,6 +62,24 @@
     </div>
     <div class="muted" style="margin-top:12px">상황을 고르세요</div>
     <div id="scenarios"></div>
+  </section>
+
+  <section id="review" class="hidden">
+    <div class="row"><button class="small" id="rvClose" style="flex:none">← 나가기</button></div>
+    <div class="muted" id="rvProgress" style="margin:8px 0"></div>
+    <div class="card" style="min-height:160px">
+      <div id="rvFront" style="font-size:20px;white-space:pre-wrap"></div>
+      <div id="rvBack" class="hidden" style="margin-top:16px;border-top:1px solid #334155;padding-top:12px">
+        <div id="rvBackText" style="font-size:20px;font-weight:700;color:var(--accent)"></div>
+        <div id="rvNote" class="muted" style="margin-top:6px"></div>
+        <button class="small" id="rvSpeak" style="margin-top:10px">🔊 다시 듣기</button>
+      </div>
+    </div>
+    <button class="primary" id="rvReveal">정답 보기</button>
+    <div class="row hidden" id="rvGrade">
+      <button id="rvMissed" style="text-align:center;background:#7f1d1d">😵 몰랐어</button>
+      <button id="rvKnew" style="text-align:center;background:#14532d">😎 알았어</button>
+    </div>
   </section>
 
   <section id="chat" class="hidden" style="display:flex;flex-direction:column;flex:1">

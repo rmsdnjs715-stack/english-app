@@ -1,5 +1,5 @@
-const CACHE = "talk-english-v3";
-const FILES = ["./", "index.html", "app.js", "groq.js", "scenarios.js", "manifest.webmanifest", "icon.svg"];
+const CACHE = "talk-english-v4";
+const FILES = ["./", "index.html", "app.js", "groq.js", "scenarios.js", "srs.js", "review.js", "manifest.webmanifest", "icon.svg"];
 
 self.addEventListener("install", (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES))));
 self.addEventListener("activate", (e) =>

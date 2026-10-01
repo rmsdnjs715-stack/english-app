@@ -1,5 +1,7 @@
 import { SCENARIOS, buildSystemPrompt, buildFeedbackPrompt, makeCustomScenario, OPENER_REQUEST } from "./scenarios.js";
 import { transcribe, chat } from "./groq.js";
+import { parseFeedback, feedbackToCards, formatFeedback } from "./srs.js";
+import { openReview, saveNewCards, dueCount } from "./review.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -15,6 +17,8 @@ function renderHome() {
   $("key").value = store.get("groqKey", "");
   $("keyBox").classList.toggle("hidden", Boolean(store.get("groqKey", "")));
   document.querySelectorAll("#levels button").forEach((b) => b.classList.toggle("on", b.dataset.level === level));
+  const due = dueCount();
+  $("reviewBtn").textContent = due ? `📚 복습하기 (${due}장)` : "📚 복습하기";
   $("scenarios").replaceChildren(
     ...SCENARIOS.map((s) => {
       const b = document.createElement("button");
@@ -31,6 +35,10 @@ $("saveKey").onclick = () => {
   if (!v.startsWith("gsk_")) return alert("gsk_ 로 시작하는 Groq 키를 넣어주세요.");
   store.set("groqKey", v);
   renderHome();
+};
+$("reviewBtn").onclick = () => {
+  $("home").classList.add("hidden");
+  openReview({ speak, onClose: () => { $("home").classList.remove("hidden"); renderHome(); } });
 };
 $("customGo").onclick = () => {
   const s = makeCustomScenario($("custom").value);
@@ -153,12 +161,18 @@ $("finish").onclick = async () => {
       .filter((m) => m.role !== "system")
       .map((m) => `${m.role === "user" ? "User" : "Partner"}: ${m.content}`)
       .join("\n");
-    const fb = await chat(
+    const raw = await chat(
       key(),
       [{ role: "system", content: buildFeedbackPrompt(level) }, { role: "user", content: transcript }],
       { maxTokens: 2048 }
     );
-    addMsg("fb", fb);
+    const fb = parseFeedback(raw);
+    if (!fb) {
+      addMsg("fb", raw); // unexpected format: still show it, just don't make cards
+      return status("카드 저장은 건너뛰었어요 (형식 오류).", true);
+    }
+    const added = saveNewCards(feedbackToCards(fb));
+    addMsg("fb", `${formatFeedback(fb)}\n\n📚 복습 카드 ${added}장 저장됨`);
     status("");
   } catch (e) {
     status("피드백 생성 실패: 다시 눌러주세요.", true);
