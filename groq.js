@@ -16,22 +16,23 @@ async function call(path, key, init) {
   return res.json();
 }
 
-export async function transcribe(key, blob) {
+export async function transcribe(key, blob, lang = "en") {
   const ext = blob.type.includes("mp4") ? "m4a" : blob.type.includes("webm") ? "webm" : "wav";
   const form = new FormData();
   form.append("file", blob, `speech.${ext}`);
   form.append("model", "whisper-large-v3-turbo");
-  form.append("language", "en");
+  form.append("language", lang);
   form.append("temperature", "0");
   const { text } = await call("/audio/transcriptions", key, { method: "POST", body: form });
   return text.trim();
 }
 
-// Big model first; on any error except a bad key (401), try the next one.
+// Big model first (or small first with `small: true` for cheap helper calls);
+// on any error except a bad key (401), try the other one.
 // gpt-oss is a reasoning model: hidden reasoning tokens count toward the budget, so keep it generous.
-export async function chat(key, messages, { maxTokens = 1024 } = {}) {
+export async function chat(key, messages, { maxTokens = 1024, small = false } = {}) {
   let lastErr;
-  for (const model of CHAT_MODELS) {
+  for (const model of small ? [...CHAT_MODELS].reverse() : CHAT_MODELS) {
     try {
       const data = await call("/chat/completions", key, {
         method: "POST",

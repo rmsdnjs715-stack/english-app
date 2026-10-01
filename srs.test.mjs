@@ -46,4 +46,19 @@ assert.deepEqual(cards[0], { front: "🔧 I want Americano one", back: "Can I ge
 assert.deepEqual(cards[1], { front: "드시고 가세요?", back: "For here or to go?", note: "" });
 assert.ok(formatFeedback(fb).includes("→ Can I get one Americano?"));
 
+// scoreSpeech: order-aware word match, ignores case/punctuation
+const { scoreSpeech } = await import("./srs.js");
+assert.deepEqual(scoreSpeech("Can I get one Americano?", "can i get one americano"), { score: 100, missed: [] });
+assert.deepEqual(scoreSpeech("Can I get one Americano?", "can I get americano"), { score: 80, missed: ["one"] });
+assert.equal(scoreSpeech("Thanks a lot", "").score, 0);
+assert.equal(scoreSpeech("a b c", "c b a").score, 33, "word order matters");
+
+// parseHints
+const { parseHints } = await import("./scenarios.js");
+assert.deepEqual(parseHints("1. Can I have a latte? | 라떼 주세요\n- Just water, please.|물만 주세요\n\n그냥 한국어\nOne more | 하나 더\nextra | x"), [
+  { en: "Can I have a latte?", ko: "라떼 주세요" },
+  { en: "Just water, please.", ko: "물만 주세요" },
+  { en: "One more", ko: "하나 더" },
+]);
+
 console.log("srs.js: all checks passed");

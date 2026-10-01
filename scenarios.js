@@ -142,7 +142,34 @@ export function makeCustomScenario(text) {
   };
 }
 
-export const OPENER_REQUEST = "Start the scene now: say your first line to the user, in character.";
+export function buildHintPrompt(level) {
+  return [
+    `You help a Korean ${level} English learner who is stuck in a role-play. Read the conversation and suggest what THE LEARNER could say next.`,
+    `Level rule: ${LEVELS[level]}`,
+    "Give exactly 3 different replies, one per line, in this format: English sentence | 한국어 뜻",
+    "No numbering, no other text.",
+  ].join("\n");
+}
+
+export function buildTranslatePrompt(level) {
+  return [
+    `A Korean ${level} English learner said something in Korean during a role-play. Turn it into what they should say in English, fitting the conversation.`,
+    `Level rule: ${LEVELS[level]}`,
+    "Reply with ONLY the English sentence, nothing else.",
+  ].join("\n");
+}
+
+// "English | 한국어" lines -> [{ en, ko }], at most 3.
+export function parseHints(text) {
+  return text
+    .split("\n")
+    .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").split("|"))
+    .map(([en = "", ko = ""]) => ({ en: en.trim(), ko: ko.trim() }))
+    .filter((h) => /[a-z]/i.test(h.en))
+    .slice(0, 3);
+}
+
+export const OPENER_REQUEST ="Start the scene now: say your first line to the user, in character.";
 
 export function buildSystemPrompt(scenario, level) {
   return [

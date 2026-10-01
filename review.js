@@ -1,4 +1,6 @@
-import { addCards, grade, dueCards } from "./srs.js";
+import { addCards, grade, dueCards, scoreSpeech } from "./srs.js";
+import { holdToRecord, releaseMic } from "./recorder.js";
+import { transcribe } from "./groq.js";
 
 const $ = (id) => document.getElementById(id);
 const KEY = "cards";
@@ -25,13 +27,47 @@ export function saveNewCards(items) {
 
 export const dueCount = () => dueCards(loadCards(), Date.now()).length;
 
+// ---------- shadowing: say the answer out loud, Whisper writes it down, compare locally (no chat tokens) ----------
+let shadowTarget = null;
+let shadowKey = () => "";
+
+function setupShadowing() {
+  const out = $("shadowResult");
+  holdToRecord($("shadow"), {
+    canStart: () => Boolean(shadowTarget),
+    onStart: () => speechSynthesis?.cancel(),
+    onError: (why) => (out.textContent = why === "mic" ? "마이크 권한을 허용해주세요." : "너무 짧아요. 꾹 누른 채 말하세요."),
+    onBlob: async (blob) => {
+      const target = shadowTarget;
+      out.textContent = "듣는 중…";
+      try {
+        const said = await transcribe(shadowKey(), blob, "en");
+        const { score, missed } = scoreSpeech(target, said);
+        const medal = score >= 90 ? "🎯" : score >= 70 ? "👍" : "💪";
+        out.textContent = `${medal} ${score}점\n내 발음: ${said || "(못 알아들음)"}${missed.length ? `\n빠진 단어: ${missed.join(", ")}` : ""}`;
+      } catch (e) {
+        console.error(e);
+        out.textContent = `음성 오류(${e.status ?? "네트워크"}): 다시 시도하세요.`;
+      }
+    },
+  });
+}
+let shadowReady = false;
+
 // One review session over the cards due now. Wrong cards come back once at the end.
-export function openReview({ speak, onClose }) {
+export function openReview({ speak, onClose, getKey }) {
   let queue = dueCards(loadCards(), Date.now()).map((c) => c.id);
   const retried = new Set();
   let done = 0;
+  shadowKey = getKey;
+  if (!shadowReady) {
+    setupShadowing();
+    shadowReady = true;
+  }
 
   const close = () => {
+    shadowTarget = null;
+    releaseMic();
     $("review").classList.add("hidden");
     onClose();
   };
@@ -42,6 +78,8 @@ export function openReview({ speak, onClose }) {
     $("rvProgress").textContent = `${done} 완료 · 남은 카드 ${queue.length}`;
     $("rvBack").classList.add("hidden");
     $("rvGrade").classList.add("hidden");
+    $("shadowResult").textContent = "";
+    shadowTarget = card?.back ?? null;
     $("rvReveal").classList.toggle("hidden", !card);
     if (!card) {
       $("rvFront").textContent = done ? "🎉 오늘 복습 끝!" : "지금 복습할 카드가 없어요.\n대화 후 '끝내고 피드백'을 누르면 카드가 쌓여요.";

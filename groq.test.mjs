@@ -49,4 +49,15 @@ assert.equal(seen.init.headers.Authorization, "Bearer k");
 assert.equal(seen.init.body.get("file").name, "speech.m4a");
 assert.equal(seen.init.body.get("model"), "whisper-large-v3-turbo");
 
+// small: true tries the small model first (helper calls save the big model's budget)
+bodies = [];
+globalThis.fetch = async (_u, init) => { bodies.push(JSON.parse(init.body)); return reply("hint"); };
+assert.equal(await chat("k", [], { small: true }), "hint");
+assert.deepEqual(bodies.map((b) => b.model), [SMALL]);
+
+// transcribe language param (Korean mode)
+globalThis.fetch = async (url, init) => { seen = { url, init }; return ok({ text: "안녕" }); };
+assert.equal(await transcribe("k", new Blob(["x"], { type: "audio/mp4" }), "ko"), "안녕");
+assert.equal(seen.init.body.get("language"), "ko");
+
 console.log("groq.js: all checks passed");

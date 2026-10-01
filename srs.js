@@ -24,6 +24,28 @@ export function grade(card, knew, now) {
 
 export const dueCards = (cards, now) => cards.filter((c) => c.due <= now).sort((a, b) => a.due - b.due);
 
+// Shadowing: how much of the target sentence the learner actually said, word by word (LCS, order-aware).
+const words = (s) => norm(s).split(" ").filter(Boolean);
+
+export function scoreSpeech(target, said) {
+  const t = words(target);
+  const s = words(said);
+  const dp = Array.from({ length: t.length + 1 }, () => new Array(s.length + 1).fill(0));
+  for (let i = t.length - 1; i >= 0; i--)
+    for (let j = s.length - 1; j >= 0; j--)
+      dp[i][j] = t[i] === s[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const hit = new Set();
+  for (let i = 0, j = 0; i < t.length && j < s.length; ) {
+    if (t[i] === s[j]) { hit.add(i); i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
+    else j++;
+  }
+  return {
+    score: t.length ? Math.round((hit.size / t.length) * 100) : 0,
+    missed: t.filter((_, i) => !hit.has(i)),
+  };
+}
+
 const str = (v, max = 200) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
 // Model output -> validated feedback, or null if it isn't the JSON we asked for.

@@ -35,8 +35,13 @@
     .msg.fb { background:#14532d; align-self:stretch; max-width:100%; }
     #status { min-height:22px; text-align:center; color:var(--muted); font-size:14px; }
     #status.err { color:var(--err); }
-    #talk { background:var(--accent); color:#052e16; font-weight:800; font-size:20px; text-align:center; padding:26px; user-select:none; -webkit-user-select:none; touch-action:none; }
-    #talk.rec { background:#ef4444; color:#fff; }
+    .hold { text-align:center; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:none; }
+    .hold.rec { background:#ef4444 !important; color:#fff !important; }
+    #talk { background:var(--accent); color:#052e16; font-weight:800; font-size:20px; padding:26px; }
+    #talkKo { margin-bottom:8px; padding:12px; font-size:15px; }
+    #hints { display:flex; flex-direction:column; gap:6px; }
+    .hintChip { background:#422006; border:1px solid #a16207; white-space:pre-wrap; font-size:15px; padding:10px 12px; }
+    #shadow { margin-top:10px; padding:16px; background:#1d4ed8; }
     .hidden { display:none !important; }
   </style>
 </head>
@@ -73,6 +78,8 @@
         <div id="rvBackText" style="font-size:20px;font-weight:700;color:var(--accent)"></div>
         <div id="rvNote" class="muted" style="margin-top:6px"></div>
         <button class="small" id="rvSpeak" style="margin-top:10px">🔊 다시 듣기</button>
+        <button id="shadow" class="hold">🗣️ 꾹 눌러 따라 말하기</button>
+        <div id="shadowResult" style="margin-top:8px;white-space:pre-wrap"></div>
       </div>
     </div>
     <button class="primary" id="rvReveal">정답 보기</button>
@@ -88,12 +95,17 @@
       <button class="small" id="finish" style="flex:none">끝내고 피드백</button>
     </div>
     <div id="log"></div>
+    <div id="hints"></div>
     <div id="status"></div>
     <div class="row" style="flex:none">
       <input id="text" type="text" placeholder="말하기 어려우면 입력" autocomplete="off" autocapitalize="sentences">
       <button class="small" id="send" style="flex:none">전송</button>
+      <button class="small" id="hint" style="flex:none">💡 힌트</button>
     </div>
-    <button id="talk">🎤 누르고 말하기</button>
+    <div id="micRow">
+      <button id="talkKo" class="hold">🇰🇷 꾹 눌러 한국어로 말하기</button>
+      <button id="talk" class="hold">🎤 누르고 말하기</button>
+    </div>
   </section>
 </main>
 <script type="module" src="app.js"></script>

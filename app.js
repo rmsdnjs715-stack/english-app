@@ -1,4 +1,8 @@
-import { SCENARIOS, buildSystemPrompt, buildFeedbackPrompt, makeCustomScenario, OPENER_REQUEST } from "./scenarios.js";
+import {
+  SCENARIOS, buildSystemPrompt, buildFeedbackPrompt, buildHintPrompt, buildTranslatePrompt,
+  parseHints, makeCustomScenario, OPENER_REQUEST,
+} from "./scenarios.js";
+import { getMic, releaseMic, holdToRecord } from "./recorder.js";
 import { transcribe, chat } from "./groq.js";
 import { parseFeedback, feedbackToCards, formatFeedback } from "./srs.js";
 import { openReview, saveNewCards, dueCount } from "./review.js";
@@ -10,7 +14,7 @@ const store = {
 };
 
 let level = store.get("level", "beginner");
-let session = null; // { scenario, messages, stream, busy }
+let session = null; // { scenario, messages, busy }
 
 // ---------- home ----------
 function renderHome() {
@@ -38,7 +42,7 @@ $("saveKey").onclick = () => {
 };
 $("reviewBtn").onclick = () => {
   $("home").classList.add("hidden");
-  openReview({ speak, onClose: () => { $("home").classList.remove("hidden"); renderHome(); } });
+  openReview({ speak, getKey: key, onClose: () => { $("home").classList.remove("hidden"); renderHome(); } });
 };
 $("customGo").onclick = () => {
   const s = makeCustomScenario($("custom").value);
@@ -85,18 +89,14 @@ async function startChat(scenario) {
   if (!key()) return alert("먼저 Groq API 키를 저장하세요.");
   // iOS: speech + mic must be unlocked inside this tap.
   if ("speechSynthesis" in window) speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-  let stream = null;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch {
-    // mic denied: text-only mode still works
-  }
+  const hasMic = await getMic().then(() => true, () => false); // denied: text-only mode still works
   const system = { role: "system", content: buildSystemPrompt(scenario, level) };
-  session = { scenario, stream, busy: true, messages: [system] };
+  session = { scenario, busy: true, messages: [system] };
   $("home").classList.add("hidden");
   $("chat").classList.remove("hidden");
   $("log").replaceChildren();
-  $("talk").classList.toggle("hidden", !stream);
+  $("hints").replaceChildren();
+  $("micRow").classList.toggle("hidden", !hasMic);
 
   let opener = scenario.opener;
   if (!opener) {
@@ -111,14 +111,14 @@ async function startChat(scenario) {
   }
   if (!session) return; // user left while the opener was loading
   session = { ...session, busy: false, messages: [system, { role: "assistant", content: opener }] };
-  status(stream ? "" : "마이크 권한이 없어 입력창만 쓸 수 있어요.");
+  status(hasMic ? "" : "마이크 권한이 없어 입력창만 쓸 수 있어요.");
   addMsg("ai", opener);
   speak(opener);
 }
 
 function leaveChat() {
   speechSynthesis?.cancel();
-  session?.stream?.getTracks().forEach((t) => t.stop());
+  releaseMic();
   session = null;
   $("chat").classList.add("hidden");
   $("home").classList.remove("hidden");
@@ -126,6 +126,7 @@ function leaveChat() {
 
 async function userSaid(text) {
   if (!session || !text) return;
+  $("hints").replaceChildren();
   addMsg("me", text);
   session = { ...session, busy: true, messages: [...session.messages, { role: "user", content: text }] };
   status("생각 중…");
@@ -180,56 +181,81 @@ $("finish").onclick = async () => {
   }
 };
 
-// ---------- hold to talk ----------
-let recorder = null;
-let chunks = [];
-const talk = $("talk");
+// ---------- helpers that don't join the conversation ----------
+// Last few turns only: enough context, fewer tokens.
+const recentTranscript = () =>
+  session.messages
+    .filter((m) => m.role !== "system")
+    .slice(-6)
+    .map((m) => `${m.role === "user" ? "Learner" : "Partner"}: ${m.content}`)
+    .join("\n");
 
-function pickMime() {
-  return ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].find((m) => MediaRecorder.isTypeSupported(m)) ?? "";
+async function helper(systemPrompt, userContent) {
+  return chat(key(), [{ role: "system", content: systemPrompt }, { role: "user", content: userContent }], {
+    small: true,
+    maxTokens: 512,
+  });
 }
 
-function startRec(e) {
-  e.preventDefault();
-  if (!session?.stream || session.busy || recorder) return;
-  speechSynthesis?.cancel();
-  chunks = [];
-  const mime = pickMime();
-  recorder = new MediaRecorder(session.stream, mime ? { mimeType: mime } : undefined);
-  recorder.ondataavailable = (ev) => ev.data.size && chunks.push(ev.data);
-  recorder.onstop = onRecStop;
-  recorder.start();
-  talk.classList.add("rec");
-  talk.textContent = "🔴 말하는 중… 놓으면 전송";
-}
-
-function stopRec(e) {
-  e.preventDefault();
-  if (recorder?.state === "recording") recorder.stop();
-}
-
-async function onRecStop() {
-  const type = recorder.mimeType || "audio/mp4";
-  recorder = null;
-  talk.classList.remove("rec");
-  talk.textContent = "🎤 누르고 말하기";
-  const blob = new Blob(chunks, { type });
-  if (blob.size < 2000) return status("너무 짧아요. 버튼을 누른 채 말하세요.", true);
-  status("듣는 중…");
+$("hint").onclick = async () => {
+  if (!session || session.busy) return;
+  status("힌트 찾는 중…");
   try {
-    const text = await transcribe(key(), blob);
-    if (!text) return status("잘 안 들렸어요. 다시 말해보세요.", true);
-    await userSaid(text);
+    const hints = parseHints(await helper(buildHintPrompt(level), recentTranscript()));
+    if (!hints.length) return status("힌트를 못 만들었어요. 다시 눌러주세요.", true);
+    $("hints").replaceChildren(
+      ...hints.map((h) => {
+        const b = document.createElement("button");
+        b.className = "hintChip";
+        b.textContent = `🔊 ${h.en}${h.ko ? `\n${h.ko}` : ""}`;
+        b.onclick = () => speak(h.en);
+        return b;
+      })
+    );
+    status("눌러서 듣고, 따라 말해보세요.");
   } catch (e) {
-    status(e.status === 401 ? "API 키가 올바르지 않아요." : "음성 인식 오류: 다시 시도하세요.", true);
     console.error(e);
+    status(`힌트 오류(${e.status ?? "네트워크"})`, true);
   }
+};
+
+async function koreanSaid(ko) {
+  addMsg("fb", `🇰🇷 ${ko}`);
+  status("영어로 바꾸는 중…");
+  const en = (await helper(buildTranslatePrompt(level), `Conversation:\n${recentTranscript()}\n\nKorean: ${ko}`))
+    .split("\n")[0]
+    .trim();
+  addMsg("fb", `🇺🇸 ${en}\n👉 이제 🎤 버튼으로 따라 말해보세요`);
+  speak(en);
+  saveNewCards([{ front: ko, back: en, note: "내가 하고 싶었던 말" }]);
+  status("");
 }
 
-talk.addEventListener("pointerdown", startRec);
-talk.addEventListener("pointerup", stopRec);
-talk.addEventListener("pointercancel", stopRec);
-talk.addEventListener("contextmenu", (e) => e.preventDefault());
+// ---------- hold to talk ----------
+const recErr = (why) =>
+  status(why === "mic" ? "마이크 권한을 허용해주세요." : "너무 짧아요. 버튼을 누른 채 말하세요.", true);
+
+function holdButton(id, lang, onText) {
+  holdToRecord($(id), {
+    canStart: () => Boolean(session && !session.busy),
+    onStart: () => speechSynthesis?.cancel(),
+    onError: recErr,
+    onBlob: async (blob) => {
+      status("듣는 중…");
+      try {
+        const text = await transcribe(key(), blob, lang);
+        if (!text) return status("잘 안 들렸어요. 다시 말해보세요.", true);
+        await onText(text);
+      } catch (e) {
+        status(e.status === 401 ? "API 키가 올바르지 않아요." : `음성 오류(${e.status ?? "네트워크"}): 다시 시도하세요.`, true);
+        console.error(e);
+      }
+    },
+  });
+}
+
+holdButton("talk", "en", userSaid);
+holdButton("talkKo", "ko", koreanSaid);
 
 renderHome();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
