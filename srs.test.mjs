@@ -52,6 +52,17 @@ assert.deepEqual(scoreSpeech("Can I get one Americano?", "can I get americano"),
 assert.equal(scoreSpeech("Thanks a lot", "").score, 0);
 assert.equal(scoreSpeech("a b c", "c b a").score, 33, "word order matters");
 
+// Maine voice is wired into every prompt, lighter for beginners
+const S = await import("./scenarios.js");
+for (const lv of ["beginner", "intermediate"]) {
+  assert.ok(S.buildSystemPrompt(S.SCENARIOS[0], lv).includes("Portland, Maine"), lv);
+  assert.ok(S.buildFeedbackPrompt(lv).includes("real person in Maine"), lv);
+  assert.ok(S.buildHintPrompt(lv).includes("real American"), lv);
+  assert.ok(S.buildTranslatePrompt(lv).includes("real American"), lv);
+}
+assert.ok(S.buildSystemPrompt(S.SCENARIOS[0], "beginner").includes("at most one 'wicked'"));
+assert.ok(S.buildSystemPrompt(S.SCENARIOS[0], "intermediate").includes("from away"));
+
 // parseHints
 const { parseHints } = await import("./scenarios.js");
 assert.deepEqual(parseHints("1. Can I have a latte? | 라떼 주세요\n- Just water, please.|물만 주세요\n\n그냥 한국어\nOne more | 하나 더\nextra | x"), [
