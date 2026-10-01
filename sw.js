@@ -1,4 +1,4 @@
-const CACHE = "talk-english-v1";
+const CACHE = "talk-english-v2";
 const FILES = ["./", "index.html", "app.js", "groq.js", "scenarios.js", "manifest.webmanifest", "icon.svg"];
 
 self.addEventListener("install", (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES))));

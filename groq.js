@@ -1,5 +1,6 @@
 const BASE = "https://api.groq.com/openai/v1";
-const CHAT_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+// Llama 3.x was retired from Groq's free tier on 2026-08-16; these are Groq's recommended replacements.
+const CHAT_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"];
 
 async function call(path, key, init) {
   const res = await fetch(`${BASE}${path}`, {
@@ -26,20 +27,30 @@ export async function transcribe(key, blob) {
   return text.trim();
 }
 
-// 70b first; on rate limit (429) fall back to 8b.
-export async function chat(key, messages, { maxTokens = 120 } = {}) {
+// Big model first; on any error except a bad key (401), try the next one.
+// gpt-oss is a reasoning model: hidden reasoning tokens count toward the budget, so keep it generous.
+export async function chat(key, messages, { maxTokens = 1024 } = {}) {
   let lastErr;
   for (const model of CHAT_MODELS) {
     try {
       const data = await call("/chat/completions", key, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: maxTokens }),
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.7,
+          max_completion_tokens: maxTokens,
+          reasoning_effort: "low",
+          include_reasoning: false,
+        }),
       });
-      return data.choices[0].message.content.trim();
+      const text = data.choices[0]?.message?.content?.trim();
+      if (!text) throw new Error(`${model}: empty reply`);
+      return text;
     } catch (e) {
       lastErr = e;
-      if (e.status !== 429) throw e;
+      if (e.status === 401) throw e;
     }
   }
   throw lastErr;

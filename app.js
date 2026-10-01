@@ -116,7 +116,7 @@ async function userSaid(text) {
     speak(reply);
     status("");
   } catch (e) {
-    status(e.status === 401 ? "API 키가 올바르지 않아요." : e.status === 429 ? "잠시 후 다시 시도하세요 (한도 초과)." : "연결 오류: 다시 시도하세요.", true);
+    status(e.status === 401 ? "API 키가 올바르지 않아요." : e.status === 429 ? "잠시 후 다시 시도하세요 (한도 초과)." : `연결 오류(${e.status ?? "네트워크"}): 다시 시도하세요.`, true);
     console.error(e);
   } finally {
     session = session && { ...session, busy: false };
@@ -144,7 +144,7 @@ $("finish").onclick = async () => {
     const fb = await chat(
       key(),
       [{ role: "system", content: buildFeedbackPrompt(level) }, { role: "user", content: transcript }],
-      { maxTokens: 600 }
+      { maxTokens: 2048 }
     );
     addMsg("fb", fb);
     status("");
