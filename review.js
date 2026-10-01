@@ -95,6 +95,7 @@ export function openReview({ speak, onClose, getKey }) {
       speak(card.back);
     };
     $("rvSpeak").onclick = () => speak(card.back);
+    $("rvSlow").onclick = () => speak(card.back, { slow: true });
     $("rvKnew").onclick = () => answer(cards, card, true);
     $("rvMissed").onclick = () => answer(cards, card, false);
   }

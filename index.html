@@ -51,7 +51,8 @@
     .btn-blue { background:var(--macaw); border-color:var(--macaw); color:var(--on-color); box-shadow:0 4px 0 var(--whale); text-align:center; }
     .btn-red { background:var(--cardinal); border-color:var(--cardinal); color:var(--on-color); box-shadow:0 4px 0 var(--fire-ant); text-align:center; }
     button.small { width:auto; padding:8px 14px; font-size:15px; }
-    .icon-btn { width:40px; height:40px; padding:0; border-radius:50%; text-align:center; font-size:18px; flex:none; box-shadow:0 3px 0 var(--swan); margin:0; }
+    .speak-pair { display:flex; gap:6px; flex:none; }
+    .icon-btn {width:40px; height:40px; padding:0; border-radius:50%; text-align:center; font-size:18px; flex:none; box-shadow:0 3px 0 var(--swan); margin:0; }
 
     input[type=password], input[type=text] { width:100%; font:inherit; padding:12px 14px; border-radius:16px; border:2px solid var(--swan);
              background:var(--polar); color:var(--eel); outline:none; }
@@ -129,7 +130,10 @@
       <div id="rvBack" class="hidden" style="margin-top:16px;border-top:2px solid var(--swan);padding-top:12px">
         <div class="row" style="align-items:center;margin:0">
           <div id="rvBackText" style="font-size:20px;font-weight:900;color:var(--tree-frog)"></div>
-          <button class="icon-btn" id="rvSpeak" aria-label="다시 듣기">🔊</button>
+          <span class="speak-pair">
+            <button class="icon-btn" id="rvSpeak" aria-label="다시 듣기">🔊</button>
+            <button class="icon-btn" id="rvSlow" aria-label="천천히 듣기">🐢</button>
+          </span>
         </div>
         <div id="rvNote" class="muted" style="margin-top:6px"></div>
         <button id="shadow" class="hold btn-blue">🗣️ 꾹 눌러 따라 말하기</button>

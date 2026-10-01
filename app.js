@@ -85,12 +85,12 @@ function addMsg(kind, text, speakText = kind === "ai" ? text : null) {
   $("log").append(d);
   $("log").scrollTop = $("log").scrollHeight;
 }
-function speak(text) {
+function speak(text, { slow = false } = {}) {
   if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "en-US";
-  u.rate = level === "beginner" ? 0.85 : 0.95;
+  u.rate = slow ? 0.6 : level === "beginner" ? 0.85 : 0.95;
   const v = speechSynthesis.getVoices().find((x) => x.lang === "en-US" && /samantha|ava|allison|google/i.test(x.name))
     ?? speechSynthesis.getVoices().find((x) => x.lang === "en-US");
   if (v) u.voice = v;

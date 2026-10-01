@@ -6,11 +6,17 @@ const el = (tag, cls, text) => {
   return e;
 };
 
+// 🔊 normal speed + 🐢 slow, side by side.
 export function speakButton(text, speak) {
-  const b = el("button", "icon-btn", "🔊");
-  b.setAttribute("aria-label", "발음 듣기");
-  b.onclick = () => speak(text);
-  return b;
+  const wrap = el("span", "speak-pair");
+  const normal = el("button", "icon-btn", "🔊");
+  normal.setAttribute("aria-label", "발음 듣기");
+  normal.onclick = () => speak(text);
+  const slow = el("button", "icon-btn", "🐢");
+  slow.setAttribute("aria-label", "천천히 듣기");
+  slow.onclick = () => speak(text, { slow: true });
+  wrap.append(normal, slow);
+  return wrap;
 }
 
 function line(cls, text, speakText, speak) {
