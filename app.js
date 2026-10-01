@@ -1,5 +1,5 @@
 import {
-  SCENARIOS, buildSystemPrompt, buildFeedbackPrompt, buildHintPrompt, buildTranslatePrompt,
+  SCENARIOS, CATEGORIES, buildSystemPrompt, buildFeedbackPrompt, buildHintPrompt, buildTranslatePrompt,
   parseHints, makeCustomScenario, OPENER_REQUEST,
 } from "./scenarios.js";
 import { getMic, releaseMic, holdToRecord } from "./recorder.js";
@@ -16,16 +16,37 @@ const store = {
 
 let level = store.get("level", "beginner");
 let session = null; // { scenario, messages, busy }
+let category = store.get("category", "all");
+if (!CATEGORIES.some((c) => c.id === category)) category = "all";
+
+const visibleScenarios = () => (category === "all" ? SCENARIOS : SCENARIOS.filter((s) => s.cat === category));
+
+function renderCategories() {
+  $("cats").replaceChildren(
+    ...CATEGORIES.map((c) => {
+      const b = document.createElement("button");
+      b.textContent = c.label;
+      b.classList.toggle("on", c.id === category);
+      b.onclick = () => {
+        category = c.id;
+        store.set("category", c.id);
+        renderHome();
+      };
+      return b;
+    })
+  );
+}
 
 // ---------- home ----------
 function renderHome() {
+  renderCategories();
   $("key").value = store.get("groqKey", "");
   $("keyBox").classList.toggle("hidden", Boolean(store.get("groqKey", "")));
   document.querySelectorAll("#levels button").forEach((b) => b.classList.toggle("on", b.dataset.level === level));
   const due = dueCount();
   $("reviewBtn").textContent = due ? `📚 복습하기 (${due}장)` : "📚 복습하기";
   $("scenarios").replaceChildren(
-    ...SCENARIOS.map((s) => {
+    ...visibleScenarios().map((s) => {
       const b = document.createElement("button");
       b.className = "card";
       const emoji = document.createElement("span");
@@ -45,6 +66,10 @@ $("saveKey").onclick = () => {
   if (!v.startsWith("gsk_")) return alert("gsk_ 로 시작하는 Groq 키를 넣어주세요.");
   store.set("groqKey", v);
   renderHome();
+};
+$("randomGo").onclick = () => {
+  const list = visibleScenarios();
+  startChat(list[Math.floor(Math.random() * list.length)]);
 };
 $("reviewBtn").onclick = () => {
   $("home").classList.add("hidden");

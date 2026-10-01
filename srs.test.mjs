@@ -63,6 +63,17 @@ for (const lv of ["beginner", "intermediate"]) {
 assert.ok(S.buildSystemPrompt(S.SCENARIOS[0], "beginner").includes("at most one 'wicked'"));
 assert.ok(S.buildSystemPrompt(S.SCENARIOS[0], "intermediate").includes("from away"));
 
+// Scenario list: unique ids, valid categories, every field filled, every category non-empty
+const ids = S.SCENARIOS.map((x) => x.id);
+assert.equal(new Set(ids).size, ids.length, "duplicate scenario id");
+const catIds = S.CATEGORIES.map((c) => c.id);
+for (const x of S.SCENARIOS) {
+  assert.ok(catIds.includes(x.cat) && x.cat !== "all", `bad cat: ${x.id}`);
+  assert.ok(x.title && x.emoji && x.role && x.goal && x.opener, `missing field: ${x.id}`);
+}
+for (const c of catIds.filter((c) => c !== "all")) assert.ok(S.SCENARIOS.some((x) => x.cat === c), `empty category ${c}`);
+assert.ok(S.SCENARIOS.some((x) => x.id === "laptop") && S.SCENARIOS.some((x) => x.id === "firstDate"));
+
 // parseHints
 const { parseHints } = await import("./scenarios.js");
 assert.deepEqual(parseHints("1. Can I have a latte? | 라떼 주세요\n- Just water, please.|물만 주세요\n\n그냥 한국어\nOne more | 하나 더\nextra | x"), [

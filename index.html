@@ -61,6 +61,10 @@
     .row > * { flex:1; }
     .seg button { text-align:center; } .seg button.on { background:var(--iguana); border-color:var(--macaw); color:var(--macaw); box-shadow:0 4px 0 var(--macaw); }
 
+    #cats { display:flex; gap:8px; overflow-x:auto; padding:2px 2px 8px; margin:0 -2px 6px; scrollbar-width:none; }
+    #cats::-webkit-scrollbar { display:none; }
+    #cats button { width:auto; flex:none; padding:8px 14px; font-size:14px; white-space:nowrap; border-radius:999px; box-shadow:0 3px 0 var(--swan); }
+    #cats button.on { background:var(--iguana); border-color:var(--macaw); color:var(--macaw); box-shadow:0 3px 0 var(--macaw); }
     #scenarios { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     #scenarios .card { margin:0; font-size:15px; padding:14px 12px; min-height:88px; display:flex; flex-direction:column; gap:6px; justify-content:center; }
     #scenarios .emoji { font-size:28px; line-height:1; }
@@ -119,6 +123,8 @@
       <button class="primary small" id="customGo" style="flex:none">시작</button>
     </div>
     <div class="label">상황을 고르세요</div>
+    <div id="cats"></div>
+    <button class="btn-blue" id="randomGo" style="margin:4px 0 14px">🎲 아무 상황이나 랜덤으로</button>
     <div id="scenarios"></div>
   </section>
 
