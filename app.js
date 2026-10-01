@@ -4,8 +4,9 @@ import {
 } from "./scenarios.js";
 import { getMic, releaseMic, holdToRecord } from "./recorder.js";
 import { transcribe, chat } from "./groq.js";
-import { parseFeedback, feedbackToCards, formatFeedback } from "./srs.js";
+import { parseFeedback, feedbackToCards } from "./srs.js";
 import { openReview, saveNewCards, dueCount } from "./review.js";
+import { renderFeedback, speakButton } from "./feedback-view.js";
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -27,7 +28,12 @@ function renderHome() {
     ...SCENARIOS.map((s) => {
       const b = document.createElement("button");
       b.className = "card";
-      b.textContent = `${s.emoji}  ${s.title}`;
+      const emoji = document.createElement("span");
+      emoji.className = "emoji";
+      emoji.textContent = s.emoji;
+      const title = document.createElement("span");
+      title.textContent = s.title;
+      b.append(emoji, title);
       b.onclick = () => startChat(s);
       return b;
     })
@@ -64,10 +70,18 @@ function status(text, isErr = false) {
   $("status").textContent = text;
   $("status").classList.toggle("err", isErr);
 }
-function addMsg(kind, text) {
+function addMsg(kind, text, speakText = kind === "ai" ? text : null) {
   const d = document.createElement("div");
   d.className = `msg ${kind}`;
-  d.textContent = text;
+  if (speakText) {
+    const t = document.createElement("span");
+    t.textContent = text;
+    d.style.display = "flex";
+    d.style.gap = "10px";
+    d.append(speakButton(speakText, speak), t);
+  } else {
+    d.textContent = text;
+  }
   $("log").append(d);
   $("log").scrollTop = $("log").scrollHeight;
 }
@@ -173,7 +187,8 @@ $("finish").onclick = async () => {
       return status("카드 저장은 건너뛰었어요 (형식 오류).", true);
     }
     const added = saveNewCards(feedbackToCards(fb));
-    addMsg("fb", `${formatFeedback(fb)}\n\n📚 복습 카드 ${added}장 저장됨`);
+    $("log").append(renderFeedback(fb, { speak, added }));
+    $("log").lastChild.scrollIntoView({ behavior: "smooth", block: "start" });
     status("");
   } catch (e) {
     status("피드백 생성 실패: 다시 눌러주세요.", true);
@@ -225,7 +240,7 @@ async function koreanSaid(ko) {
   const en = (await helper(buildTranslatePrompt(level), `Conversation:\n${recentTranscript()}\n\nKorean: ${ko}`))
     .split("\n")[0]
     .trim();
-  addMsg("fb", `🇺🇸 ${en}\n👉 이제 🎤 버튼으로 따라 말해보세요`);
+  addMsg("fb", `🇺🇸 ${en}\n👉 이제 🎤 버튼으로 따라 말해보세요`, en);
   speak(en);
   saveNewCards([{ front: ko, back: en, note: "내가 하고 싶었던 말" }]);
   status("");

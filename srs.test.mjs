@@ -1,6 +1,6 @@
 // Run: node srs.test.mjs
 import assert from "node:assert/strict";
-import { addCards, grade, dueCards, parseFeedback, feedbackToCards, formatFeedback, INTERVALS } from "./srs.js";
+import { addCards, grade, dueCards, parseFeedback, feedbackToCards, INTERVALS } from "./srs.js";
 
 const DAY = 86_400_000;
 const now = 1_000_000;
@@ -39,12 +39,11 @@ assert.equal(parseFeedback("no json here"), null);
 assert.equal(parseFeedback("{broken"), null);
 assert.equal(parseFeedback('{"corrections":[],"expressions":[]}'), null);
 
-// feedbackToCards + formatFeedback
+// feedbackToCards
 const cards = feedbackToCards(fb);
 assert.equal(cards.length, 6);
 assert.deepEqual(cards[0], { front: "🔧 I want Americano one", back: "Can I get one Americano?", note: "수량은 앞에" });
 assert.deepEqual(cards[1], { front: "드시고 가세요?", back: "For here or to go?", note: "" });
-assert.ok(formatFeedback(fb).includes("→ Can I get one Americano?"));
 
 // scoreSpeech: order-aware word match, ignores case/punctuation
 const { scoreSpeech } = await import("./srs.js");

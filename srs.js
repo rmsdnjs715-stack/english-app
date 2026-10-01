@@ -77,17 +77,3 @@ export const feedbackToCards = (fb) => [
   ...fb.expressions.map((x) => ({ front: x.ko, back: x.en, note: "" })),
 ];
 
-export function formatFeedback(fb) {
-  const lines = [];
-  if (fb.praise) lines.push(`👍 ${fb.praise}`, "");
-  if (fb.corrections.length) {
-    lines.push("🔧 고치면 좋은 문장");
-    fb.corrections.forEach((c) => lines.push(`• ${c.mine}\n  → ${c.better}${c.why ? `\n  (${c.why})` : ""}`));
-    lines.push("");
-  }
-  if (fb.expressions.length) {
-    lines.push("✨ 오늘 써먹을 표현");
-    fb.expressions.forEach((x) => lines.push(`• ${x.en} — ${x.ko}`));
-  }
-  return lines.join("\n").trim();
-}
