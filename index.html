@@ -9,7 +9,8 @@
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#131f24" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="icon-192.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
@@ -107,9 +108,15 @@
   <section id="home">
     <h1>Talk English</h1>
     <div class="card" id="keyBox">
-      <div class="muted" style="margin-bottom:8px">Groq API 키 (이 폰에만 저장됩니다)</div>
+      <div style="font-weight:900;font-size:18px;margin-bottom:6px">👋 처음이세요? 무료 키 하나만 넣으면 끝!</div>
+      <ol class="muted" style="margin:0 0 10px;padding-left:20px;line-height:1.7">
+        <li><a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--macaw);font-weight:800">console.groq.com/keys</a> 열기 → 구글 계정으로 로그인 (무료, 카드 X)</li>
+        <li><b>Create API Key</b> → 이름 아무거나 → <b>Submit</b></li>
+        <li><b>gsk_</b>로 시작하는 키 복사 → 아래에 붙여넣기</li>
+      </ol>
       <input id="key" type="password" placeholder="gsk_..." autocomplete="off">
       <div class="row"><button class="primary small" id="saveKey">저장</button></div>
+      <div class="muted" style="font-size:13px">🔒 키는 이 폰에만 저장되고 다른 곳으로 보내지지 않아요.</div>
     </div>
     <button class="primary" id="reviewBtn" style="margin-bottom:12px">📚 복습하기</button>
     <div class="label">레벨</div>
@@ -126,6 +133,10 @@
     <div id="cats"></div>
     <button class="btn-blue" id="randomGo" style="margin:4px 0 14px">🎲 아무 상황이나 랜덤으로</button>
     <div id="scenarios"></div>
+    <div class="row" style="margin-top:20px">
+      <button id="shareApp" style="text-align:center">📤 친구에게 공유</button>
+      <button id="resetKey" style="text-align:center">🔑 키 바꾸기</button>
+    </div>
   </section>
 
   <section id="review" class="hidden">

@@ -1,5 +1,5 @@
-const CACHE = "talk-english-v9";
-const FILES = ["./", "index.html", "app.js", "groq.js", "scenarios.js", "scenario-list.js", "srs.js", "review.js", "recorder.js", "feedback-view.js", "manifest.webmanifest", "icon.svg"];
+const CACHE = "talk-english-v10";
+const FILES = ["./", "index.html", "app.js", "groq.js", "scenarios.js", "scenario-list.js", "srs.js", "review.js", "recorder.js", "feedback-view.js", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES))));
 self.addEventListener("activate", (e) =>

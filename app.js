@@ -87,8 +87,26 @@ $("levels").onclick = (e) => {
   store.set("level", l);
   renderHome();
 };
-// double-tap the title to change the key
-document.querySelector("h1").addEventListener("dblclick", () => { store.set("groqKey", ""); renderHome(); });
+const resetKey = () => {
+  store.set("groqKey", "");
+  renderHome();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+// double-tap the title also changes the key (kept for existing users)
+document.querySelector("h1").addEventListener("dblclick", resetKey);
+$("resetKey").onclick = resetKey;
+
+const APP_URL = "https://rmsdnjs715-stack.github.io/english-app/";
+$("shareApp").onclick = async () => {
+  const text = "출퇴근 5분 영어회화 앱 Talk English 🎤 (무료)\n아이폰은 사파리, 갤럭시는 크롬으로 열고 '홈 화면에 추가' 하면 앱처럼 쓸 수 있어요!";
+  try {
+    if (navigator.share) return await navigator.share({ title: "Talk English", text, url: APP_URL });
+    await navigator.clipboard.writeText(`${text}\n${APP_URL}`);
+    alert("링크를 복사했어요! 카톡에 붙여넣기 하세요.");
+  } catch (e) {
+    if (e?.name !== "AbortError") prompt("아래 링크를 복사하세요", APP_URL); // share sheet closed = fine
+  }
+};
 
 // ---------- helpers ----------
 function status(text, isErr = false) {
